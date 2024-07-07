@@ -2,9 +2,13 @@
 package amqp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/klauspost/compress/snappy"
+	"github.com/pierrec/lz4"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 
 	amqpDriver "github.com/rabbitmq/amqp091-go"
@@ -30,23 +34,24 @@ type Options struct {
 
 // PublishOptions defines a message payload with delivery options.
 type PublishOptions struct {
-	ConnectionID  int
-	RoutingKey    string
-	Body          string
-	Headers       amqpDriver.Table
-	Exchange      string
-	ContentType   string
-	Mandatory     bool
-	Immediate     bool
-	Persistent    bool
-	CorrelationID string
-	ReplyTo       string
-	Expiration    string
-	MessageID     string
-	Timestamp     int64 // unix epoch timestamp in seconds
-	Type          string
-	UserID        string
-	AppID         string
+	ConnectionID    int
+	QueueName       string
+	Body            string
+	Headers         amqpDriver.Table
+	Exchange        string
+	ContentType     string
+	ContentEncoding string
+	Mandatory       bool
+	Immediate       bool
+	Persistent      bool
+	CorrelationID   string
+	ReplyTo         string
+	Expiration      string
+	MessageID       string
+	Timestamp       int64 // unix epoch timestamp in seconds
+	Type            string
+	UserID          string
+	AppID           string
 }
 
 // ConsumeOptions defines options for use when consuming a message.
@@ -136,6 +141,15 @@ func (amqp *AMQP) Publish(options PublishOptions) error {
 		publishing.Body = []byte(options.Body)
 	}
 
+	if options.ContentEncoding != "" {
+		encodedBody, err := amqp.encodeMessage(publishing.Body, options.ContentEncoding)
+		if err != nil {
+			return err
+		}
+
+		publishing.Body = encodedBody
+	}
+
 	if options.Persistent {
 		publishing.DeliveryMode = amqpDriver.Persistent
 	}
@@ -156,11 +170,42 @@ func (amqp *AMQP) Publish(options PublishOptions) error {
 	return ch.PublishWithContext(
 		context.Background(), // TODO: use vu context
 		options.Exchange,
-		options.RoutingKey,
+		options.QueueName,
 		options.Mandatory,
 		options.Immediate,
 		publishing,
 	)
+}
+
+func (amqp *AMQP) encodeMessage(message []byte, encoding string) ([]byte, error) {
+	switch encoding {
+	case "snappy":
+		encoded := snappy.Encode(nil, message)
+		return encoded, nil
+	case "lz4":
+		encoded := new(bytes.Buffer)
+		zw := lz4.NewWriter(encoded)
+
+		_, err := zw.Write(message)
+		if err != nil {
+			return nil, fmt.Errorf("lz4 encode failed: %w", err)
+		}
+
+		if err := zw.Flush(); err != nil {
+			return nil, fmt.Errorf("lz4 encode failed: %w", err)
+		}
+
+		return encoded.Bytes(), nil
+	case "bson":
+		encoded, err := bson.Marshal(message)
+		if err != nil {
+			return nil, fmt.Errorf("bson encode failed: %w", err)
+		}
+
+		return encoded, nil
+	default:
+		return message, nil
+	}
 }
 
 // Listen binds to an AMQP queue in order to receive message(s) as they are received.

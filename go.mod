@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/bkaradzic/go-lz4 v1.0.0 // indirect
 	github.com/dlclark/regexp2 v1.9.0 // indirect
 	github.com/dop251/goja v0.0.0-20230531210528-d7324b2d74f7 // indirect
 	github.com/fatih/color v1.15.0 // indirect
@@ -21,12 +22,14 @@ require (
 	github.com/mstoykov/atlas v0.0.0-20220811071828-388f114305dd // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.24.2 // indirect
+	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	go.mongodb.org/mongo-driver v1.16.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gopkg.in/guregu/null.v3 v3.3.0 // indirect
 )
