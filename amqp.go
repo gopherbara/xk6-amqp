@@ -31,7 +31,7 @@ type Options struct {
 // PublishOptions defines a message payload with delivery options.
 type PublishOptions struct {
 	ConnectionID  int
-	QueueName     string
+	RoutingKey    string
 	Body          string
 	Headers       amqpDriver.Table
 	Exchange      string
@@ -156,7 +156,7 @@ func (amqp *AMQP) Publish(options PublishOptions) error {
 	return ch.PublishWithContext(
 		context.Background(), // TODO: use vu context
 		options.Exchange,
-		options.QueueName,
+		options.RoutingKey,
 		options.Mandatory,
 		options.Immediate,
 		publishing,
